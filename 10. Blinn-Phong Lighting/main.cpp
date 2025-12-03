@@ -180,7 +180,7 @@ int WINAPI WinMain(HINSTANCE hInstance, HINSTANCE /*hPrevInstance*/, LPSTR /*lpC
 #pragma endregion
 
 #pragma region Models
-    Model cubeModel = Model("cube.obj", &renderDevice);
+    Model planeModel = Model("plane.obj", &renderDevice);
 #pragma endregion
 
 #pragma region Textures
@@ -348,7 +348,7 @@ int WINAPI WinMain(HINSTANCE hInstance, HINSTANCE /*hPrevInstance*/, LPSTR /*lpC
 
         if(global_windowDidResize)
         {
-            renderDevice.GetDeviceContext()->OMSetRenderTargets(0, 0, 0);
+            renderDevice.GetContext()->OMSetRenderTargets(0, 0, 0);
             renderTarget.GetRenderTarget()->Release();
             renderTarget.GetDepthBuffer()->Release();
 
@@ -466,59 +466,60 @@ int WINAPI WinMain(HINSTANCE hInstance, HINSTANCE /*hPrevInstance*/, LPSTR /*lpC
         }
 
         FLOAT backgroundColor[4] = { 0.1f, 0.2f, 0.6f, 1.0f };
-        renderDevice.GetDeviceContext()->ClearRenderTargetView(renderTarget.GetRenderTarget(), backgroundColor);
+        renderDevice.GetContext()->ClearRenderTargetView(renderTarget.GetRenderTarget(), backgroundColor);
         
-        renderDevice.GetDeviceContext()->ClearDepthStencilView(renderTarget.GetDepthBuffer(), D3D11_CLEAR_DEPTH, 1.0f, 0);
+        renderDevice.GetContext()->ClearDepthStencilView(renderTarget.GetDepthBuffer(), D3D11_CLEAR_DEPTH, 1.0f, 0);
 
         D3D11_VIEWPORT viewport = { 0.0f, 0.0f, (FLOAT)windowWidth, (FLOAT)windowHeight, 0.0f, 1.0f };
-        renderDevice.GetDeviceContext()->RSSetViewports(1, &viewport);
+        renderDevice.GetContext()->RSSetViewports(1, &viewport);
 
-        renderDevice.GetDeviceContext()->RSSetState(rasterizerState);
-        renderDevice.GetDeviceContext()->OMSetDepthStencilState(depthStencilState, 0);
+        renderDevice.GetContext()->RSSetState(rasterizerState);
+        renderDevice.GetContext()->OMSetDepthStencilState(depthStencilState, 0);
         
         
-        renderDevice.GetDeviceContext()->OMSetRenderTargets(1, renderTarget.GetRenderTargetAddr(), renderTarget.GetDepthBuffer());
+        renderDevice.GetContext()->OMSetRenderTargets(1, renderTarget.GetRenderTargetAddr(), renderTarget.GetDepthBuffer());
 
-        renderDevice.GetDeviceContext()->IASetPrimitiveTopology(D3D11_PRIMITIVE_TOPOLOGY_TRIANGLELIST);
+        renderDevice.GetContext()->IASetPrimitiveTopology(D3D11_PRIMITIVE_TOPOLOGY_TRIANGLELIST);
 
-        renderDevice.GetDeviceContext()->IASetVertexBuffers(0, 1, cubeModel.GetVertexBufferAddr(), cubeModel.GetStrideAddr(), cubeModel.GetOffsetAddr());
-        renderDevice.GetDeviceContext()->IASetIndexBuffer(cubeModel.GetIndexBuffer(), DXGI_FORMAT_R16_UINT, 0);
+        renderDevice.GetContext()->IASetVertexBuffers(0, 1, planeModel.GetVertexBufferAddr(), planeModel.GetStrideAddr(), planeModel.GetOffsetAddr());
+        renderDevice.GetContext()->IASetIndexBuffer(planeModel.GetIndexBuffer(), DXGI_FORMAT_R16_UINT, 0);
 
         // Draw lights
         {
-            renderDevice.GetDeviceContext()->IASetInputLayout(lightShader.GetInputLayout());
-            renderDevice.GetDeviceContext()->VSSetShader(lightShader.GetVertexShader(), nullptr, 0);
-            renderDevice.GetDeviceContext()->PSSetShader(lightShader.GetPixelShader(), nullptr, 0);
-            renderDevice.GetDeviceContext()->VSSetConstantBuffers(0, 1, &lightVSConstantBuffer);
+            renderDevice.GetContext()->IASetInputLayout(lightShader.GetInputLayout());
+            renderDevice.GetContext()->VSSetShader(lightShader.GetVertexShader(), nullptr, 0);
+            renderDevice.GetContext()->PSSetShader(lightShader.GetPixelShader(), nullptr, 0);
+            renderDevice.GetContext()->VSSetConstantBuffers(0, 1, &lightVSConstantBuffer);
 
             for(int i=0; i<NUM_LIGHTS; ++i){
                 // Update vertex shader constant buffer
                 D3D11_MAPPED_SUBRESOURCE mappedSubresource;
-                renderDevice.GetDeviceContext()->Map(lightVSConstantBuffer, 0, D3D11_MAP_WRITE_DISCARD, 0, &mappedSubresource);
+                renderDevice.GetContext()->Map(lightVSConstantBuffer, 0, D3D11_MAP_WRITE_DISCARD, 0, &mappedSubresource);
                 LightVSConstants* constants = (LightVSConstants*)(mappedSubresource.pData);
                 constants->modelViewProj = lightModelViewMats[i] * perspectiveMat;
                 constants->color = lightColor[i];
-                renderDevice.GetDeviceContext()->Unmap(lightVSConstantBuffer, 0);
+                renderDevice.GetContext()->Unmap(lightVSConstantBuffer, 0);
 
-                renderDevice.GetDeviceContext()->DrawIndexed(cubeModel.GetNumIndices(), 0, 0);
+                renderDevice.GetContext()->DrawIndexed(planeModel.GetNumIndices(), 0, 0);
             }
         }
         // Draw cubes
         {
-            renderDevice.GetDeviceContext()->IASetInputLayout(blinnPhongShader.GetInputLayout());
-            renderDevice.GetDeviceContext()->VSSetShader(blinnPhongShader.GetVertexShader(), nullptr, 0);
-            renderDevice.GetDeviceContext()->PSSetShader(blinnPhongShader.GetPixelShader(), nullptr, 0);
+            renderDevice.GetContext()->IASetInputLayout(blinnPhongShader.GetInputLayout());
+            renderDevice.GetContext()->VSSetShader(blinnPhongShader.GetVertexShader(), nullptr, 0);
+            renderDevice.GetContext()->PSSetShader(blinnPhongShader.GetPixelShader(), nullptr, 0);
 
-            renderDevice.GetDeviceContext()->PSSetShaderResources(0, 1, testTexture.GetTextureViewAddr());
-            renderDevice.GetDeviceContext()->PSSetSamplers(0, 1, testTexture.GetSamplerStateAddr());
 
-            renderDevice.GetDeviceContext()->VSSetConstantBuffers(0, 1, &blinnPhongVSConstantBuffer);
-            renderDevice.GetDeviceContext()->PSSetConstantBuffers(0, 1, &blinnPhongPSConstantBuffer);
+            renderDevice.GetContext()->PSSetShaderResources(0, 1, testTexture.GetTextureViewAddr());
+            renderDevice.GetContext()->PSSetSamplers(0, 1, testTexture.GetSamplerStateAddr());
+
+            renderDevice.GetContext()->VSSetConstantBuffers(0, 1, &blinnPhongVSConstantBuffer);
+            renderDevice.GetContext()->PSSetConstantBuffers(0, 1, &blinnPhongPSConstantBuffer);
 
             // Update pixel shader constant buffer
             {
                 D3D11_MAPPED_SUBRESOURCE mappedSubresource;
-                renderDevice.GetDeviceContext()->Map(blinnPhongPSConstantBuffer, 0, D3D11_MAP_WRITE_DISCARD, 0, &mappedSubresource);
+                renderDevice.GetContext()->Map(blinnPhongPSConstantBuffer, 0, D3D11_MAP_WRITE_DISCARD, 0, &mappedSubresource);
                 BlinnPhongPSConstants* constants = (BlinnPhongPSConstants*)(mappedSubresource.pData);
                 constants->dirLight.dirEye = normalise(float4{1.f, 1.f, 1.f, 0.f});
                 constants->dirLight.color = {0.7f, 0.8f, 0.2f, 1.f};
@@ -526,21 +527,21 @@ int WINAPI WinMain(HINSTANCE hInstance, HINSTANCE /*hPrevInstance*/, LPSTR /*lpC
                     constants->pointLights[i].posEye = pointLightPosEye[i];
                     constants->pointLights[i].color = lightColor[i];
                 }
-                renderDevice.GetDeviceContext()->Unmap(blinnPhongPSConstantBuffer, 0);
+                renderDevice.GetContext()->Unmap(blinnPhongPSConstantBuffer, 0);
             }
 
             for(int i=0; i<NUM_CUBES; ++i)
             {
                 // Update vertex shader constant buffer
                 D3D11_MAPPED_SUBRESOURCE mappedSubresource;
-                renderDevice.GetDeviceContext()->Map(blinnPhongVSConstantBuffer, 0, D3D11_MAP_WRITE_DISCARD, 0, &mappedSubresource);
+                renderDevice.GetContext()->Map(blinnPhongVSConstantBuffer, 0, D3D11_MAP_WRITE_DISCARD, 0, &mappedSubresource);
                 BlinnPhongVSConstants* constants = (BlinnPhongVSConstants*)(mappedSubresource.pData);
                 constants->modelViewProj = cubeModelViewMats[i] * perspectiveMat;
                 constants->modelView = cubeModelViewMats[i];
                 constants->normalMatrix = cubeNormalMats[i];
-                renderDevice.GetDeviceContext()->Unmap(blinnPhongVSConstantBuffer, 0);
+                renderDevice.GetContext()->Unmap(blinnPhongVSConstantBuffer, 0);
 
-                renderDevice.GetDeviceContext()->DrawIndexed(cubeModel.GetNumIndices(), 0, 0);
+                renderDevice.GetContext()->DrawIndexed(planeModel.GetNumIndices(), 0, 0);
             }
         }
     

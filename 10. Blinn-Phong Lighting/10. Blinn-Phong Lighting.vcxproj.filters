@@ -74,6 +74,9 @@
     <CopyFileToFolders Include="cube.obj">
       <Filter>Assets</Filter>
     </CopyFileToFolders>
+    <CopyFileToFolders Include="plane.obj">
+      <Filter>Assets</Filter>
+    </CopyFileToFolders>
   </ItemGroup>
   <ItemGroup>
     <Image Include="test.png">

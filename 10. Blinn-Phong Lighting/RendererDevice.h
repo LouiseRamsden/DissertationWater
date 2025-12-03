@@ -109,7 +109,7 @@ public:
     {
         return m_pDevice;
     }
-    ID3D11DeviceContext1* GetDeviceContext()
+    ID3D11DeviceContext1* GetContext()
     {
         return m_pDeviceContext;
     }

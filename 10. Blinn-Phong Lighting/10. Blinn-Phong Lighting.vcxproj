@@ -64,6 +64,11 @@
   <ItemGroup>
     <Image Include="test.png" />
   </ItemGroup>
+  <ItemGroup>
+    <CopyFileToFolders Include="plane.obj">
+      <FileType>Document</FileType>
+    </CopyFileToFolders>
+  </ItemGroup>
   <PropertyGroup Label="Globals">
     <VCProjectVersion>16.0</VCProjectVersion>
     <Keyword>Win32Proj</Keyword>

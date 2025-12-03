@@ -17,9 +17,9 @@
 
 class Texture
 {
-    ID3D11SamplerState* m_pSamplerState;
-    ID3D11ShaderResourceView* m_pTextureView;
-    ID3D11Texture2D* m_pTexture;
+    ID3D11SamplerState* m_pSamplerState = {nullptr};
+    ID3D11ShaderResourceView* m_pTextureView = {nullptr};
+    ID3D11Texture2D* m_pTexture = {nullptr};
 public:
     Texture(const char* path, RendererDevice* device);
 

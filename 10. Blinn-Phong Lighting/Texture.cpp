@@ -5,7 +5,10 @@
 
 Texture::Texture(const char* path, RendererDevice* device)
 {
+    if (path == nullptr) 
+    {
 
+    }
     D3D11_SAMPLER_DESC samplerDesc = {};
     samplerDesc.Filter = D3D11_FILTER_MIN_MAG_MIP_POINT;
     samplerDesc.AddressU = D3D11_TEXTURE_ADDRESS_BORDER;
