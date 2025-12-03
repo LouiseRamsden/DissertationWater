@@ -10,14 +10,13 @@
 #include <assert.h>
 #include <stdint.h>
 
-#define STB_IMAGE_IMPLEMENTATION
-#include "stb_image.h"
-
 #include "3DMaths.h"
 #include "ObjLoading.h"
 #include "RendererDevice.h"
 #include "RendererTarget.h"
 #include "RendererShader.h"
+#include "Model.h"
+#include "Texture.h"
 
 static bool global_windowDidResize = false;
 
@@ -89,8 +88,9 @@ LRESULT CALLBACK WndProc(HWND hwnd, UINT msg, WPARAM wparam, LPARAM lparam)
 
 int WINAPI WinMain(HINSTANCE hInstance, HINSTANCE /*hPrevInstance*/, LPSTR /*lpCmdLine*/, int /*nShowCmd*/)
 {
-    // Open a window
-    HWND hwnd;
+#pragma region Window
+
+    HWND hwnd; //Open a window
     {
         WNDCLASSEXW winClass = {};
         winClass.cbSize = sizeof(WNDCLASSEXW);
@@ -126,12 +126,18 @@ int WINAPI WinMain(HINSTANCE hInstance, HINSTANCE /*hPrevInstance*/, LPSTR /*lpC
             return GetLastError();
         }
     }
+#pragma endregion 
 
+#pragma region Device
     RendererDevice renderDevice = RendererDevice(hwnd); //Renderer Device (device, device context, swapchain)
+#pragma endregion
 
+#pragma region RenderTarget
     RendererTarget renderTarget = RendererTarget(renderDevice); //Renderer Target (Framebuffer and depth stencil)
+#pragma endregion
 
-
+#pragma region Shaders
+    //Shaders
     D3D11_INPUT_ELEMENT_DESC lightinputdesc[] =
     {
         { "POS", 0, DXGI_FORMAT_R32G32B32_FLOAT, 0, 0, D3D11_INPUT_PER_VERTEX_DATA, 0 }
@@ -171,94 +177,17 @@ int WINAPI WinMain(HINSTANCE hInstance, HINSTANCE /*hPrevInstance*/, LPSTR /*lpC
         bfinputdesc,
         ARRAYSIZE(bfinputdesc)
     );
+#pragma endregion
 
+#pragma region Models
+    Model cubeModel = Model("cube.obj", &renderDevice);
+#pragma endregion
 
+#pragma region Textures
+    Texture testTexture = Texture("test.png", &renderDevice);
+#pragma endregion
 
-    // Create Vertex and Index Buffer
-    ID3D11Buffer* cubeVertexBuffer;
-    ID3D11Buffer* cubeIndexBuffer;
-    UINT cubeNumIndices;
-    UINT cubeStride;
-    UINT cubeOffset;
-    {
-        LoadedObj obj = loadObj("cube.obj");
-        cubeStride = sizeof(VertexData);
-        cubeOffset = 0;
-        cubeNumIndices = obj.numIndices;
-
-        D3D11_BUFFER_DESC vertexBufferDesc = {};
-        vertexBufferDesc.ByteWidth = obj.numVertices * sizeof(VertexData);
-        vertexBufferDesc.Usage     = D3D11_USAGE_IMMUTABLE;
-        vertexBufferDesc.BindFlags = D3D11_BIND_VERTEX_BUFFER;
-
-        D3D11_SUBRESOURCE_DATA vertexSubresourceData = { obj.vertexBuffer };
-
-        HRESULT hResult = renderDevice.GetDevice()->CreateBuffer(&vertexBufferDesc, &vertexSubresourceData, &cubeVertexBuffer);
-        assert(SUCCEEDED(hResult));
-
-        D3D11_BUFFER_DESC indexBufferDesc = {};
-        indexBufferDesc.ByteWidth = obj.numIndices * sizeof(uint16_t);
-        indexBufferDesc.Usage     = D3D11_USAGE_IMMUTABLE;
-        indexBufferDesc.BindFlags = D3D11_BIND_INDEX_BUFFER;
-
-        D3D11_SUBRESOURCE_DATA indexSubresourceData = { obj.indexBuffer };
-
-        hResult = renderDevice.GetDevice()->CreateBuffer(&indexBufferDesc, &indexSubresourceData, &cubeIndexBuffer);
-        assert(SUCCEEDED(hResult));
-        freeLoadedObj(obj);
-    }
-
-    // Create Sampler State
-    ID3D11SamplerState* samplerState;
-    {
-        D3D11_SAMPLER_DESC samplerDesc = {};
-        samplerDesc.Filter         = D3D11_FILTER_MIN_MAG_MIP_POINT;
-        samplerDesc.AddressU       = D3D11_TEXTURE_ADDRESS_BORDER;
-        samplerDesc.AddressV       = D3D11_TEXTURE_ADDRESS_BORDER;
-        samplerDesc.AddressW       = D3D11_TEXTURE_ADDRESS_BORDER;
-        samplerDesc.BorderColor[0] = 1.0f;
-        samplerDesc.BorderColor[1] = 1.0f;
-        samplerDesc.BorderColor[2] = 1.0f;
-        samplerDesc.BorderColor[3] = 1.0f;
-        samplerDesc.ComparisonFunc = D3D11_COMPARISON_NEVER;
-
-        renderDevice.GetDevice()->CreateSamplerState(&samplerDesc, &samplerState);
-    }
-    
-    // Load Image
-    int texWidth, texHeight, texNumChannels;
-    int texForceNumChannels = 4;
-    unsigned char* testTextureBytes = stbi_load("test.png", &texWidth, &texHeight,
-                                                &texNumChannels, texForceNumChannels);
-    assert(testTextureBytes);
-    int texBytesPerRow = 4 * texWidth;
-
-    // Create Texture
-    ID3D11ShaderResourceView* textureView;
-    {
-        D3D11_TEXTURE2D_DESC textureDesc = {};
-        textureDesc.Width              = texWidth;
-        textureDesc.Height             = texHeight;
-        textureDesc.MipLevels          = 1;
-        textureDesc.ArraySize          = 1;
-        textureDesc.Format             = DXGI_FORMAT_R8G8B8A8_UNORM_SRGB;
-        textureDesc.SampleDesc.Count   = 1;
-        textureDesc.Usage              = D3D11_USAGE_IMMUTABLE;
-        textureDesc.BindFlags          = D3D11_BIND_SHADER_RESOURCE;
-
-        D3D11_SUBRESOURCE_DATA textureSubresourceData = {};
-        textureSubresourceData.pSysMem = testTextureBytes;
-        textureSubresourceData.SysMemPitch = texBytesPerRow;
-
-        ID3D11Texture2D* texture;
-        renderDevice.GetDevice()->CreateTexture2D(&textureDesc, &textureSubresourceData, &texture);
-
-        renderDevice.GetDevice()->CreateShaderResourceView(texture, nullptr, &textureView);
-        texture->Release();
-    }
-
-    free(testTextureBytes);
-
+#pragma region ConstBuffers(CouldAddToShader)
     // Create Constant Buffer for our light vertex shader
     struct LightVSConstants
     {
@@ -331,7 +260,9 @@ int WINAPI WinMain(HINSTANCE hInstance, HINSTANCE /*hPrevInstance*/, LPSTR /*lpC
         HRESULT hResult = renderDevice.GetDevice()->CreateBuffer(&constantBufferDesc, nullptr, &blinnPhongPSConstantBuffer);
         assert(SUCCEEDED(hResult));
     }
+#pragma endregion
 
+#pragma region RasterAndDepthStencilStates(CouldBeAbstracted)
     ID3D11RasterizerState* rasterizerState;
     {
         D3D11_RASTERIZER_DESC rasterizerDesc = {};
@@ -351,7 +282,9 @@ int WINAPI WinMain(HINSTANCE hInstance, HINSTANCE /*hPrevInstance*/, LPSTR /*lpC
 
         renderDevice.GetDevice()->CreateDepthStencilState(&depthStencilDesc, &depthStencilState);
     }
+#pragma endregion
 
+#pragma region Camera(ToBeAbstracted)
     // Camera
     float3 cameraPos = {0, 0, 2};
     float3 cameraFwd = {0, 0, -1};
@@ -360,7 +293,9 @@ int WINAPI WinMain(HINSTANCE hInstance, HINSTANCE /*hPrevInstance*/, LPSTR /*lpC
 
     float4x4 perspectiveMat = {};
     global_windowDidResize = true; // To force initial perspectiveMat calculation
+#pragma endregion
 
+#pragma region Timer
     // Timing
     LONGLONG startPerfCount = 0;
     LONGLONG perfCounterFrequency = 0;
@@ -373,11 +308,7 @@ int WINAPI WinMain(HINSTANCE hInstance, HINSTANCE /*hPrevInstance*/, LPSTR /*lpC
         perfCounterFrequency = perfFreq.QuadPart;
     }
     double currentTimeInSeconds = 0.0;
-
-
-
-
-
+#pragma endregion
 
     // Main Loop
     bool isRunning = true;
@@ -545,13 +476,13 @@ int WINAPI WinMain(HINSTANCE hInstance, HINSTANCE /*hPrevInstance*/, LPSTR /*lpC
         renderDevice.GetDeviceContext()->RSSetState(rasterizerState);
         renderDevice.GetDeviceContext()->OMSetDepthStencilState(depthStencilState, 0);
         
-        ID3D11RenderTargetView* temp = renderTarget.GetRenderTarget();
-        renderDevice.GetDeviceContext()->OMSetRenderTargets(1, &temp, renderTarget.GetDepthBuffer());
+        
+        renderDevice.GetDeviceContext()->OMSetRenderTargets(1, renderTarget.GetRenderTargetAddr(), renderTarget.GetDepthBuffer());
 
         renderDevice.GetDeviceContext()->IASetPrimitiveTopology(D3D11_PRIMITIVE_TOPOLOGY_TRIANGLELIST);
 
-        renderDevice.GetDeviceContext()->IASetVertexBuffers(0, 1, &cubeVertexBuffer, &cubeStride, &cubeOffset);
-        renderDevice.GetDeviceContext()->IASetIndexBuffer(cubeIndexBuffer, DXGI_FORMAT_R16_UINT, 0);
+        renderDevice.GetDeviceContext()->IASetVertexBuffers(0, 1, cubeModel.GetVertexBufferAddr(), cubeModel.GetStrideAddr(), cubeModel.GetOffsetAddr());
+        renderDevice.GetDeviceContext()->IASetIndexBuffer(cubeModel.GetIndexBuffer(), DXGI_FORMAT_R16_UINT, 0);
 
         // Draw lights
         {
@@ -569,7 +500,7 @@ int WINAPI WinMain(HINSTANCE hInstance, HINSTANCE /*hPrevInstance*/, LPSTR /*lpC
                 constants->color = lightColor[i];
                 renderDevice.GetDeviceContext()->Unmap(lightVSConstantBuffer, 0);
 
-                renderDevice.GetDeviceContext()->DrawIndexed(cubeNumIndices, 0, 0);
+                renderDevice.GetDeviceContext()->DrawIndexed(cubeModel.GetNumIndices(), 0, 0);
             }
         }
         // Draw cubes
@@ -578,8 +509,8 @@ int WINAPI WinMain(HINSTANCE hInstance, HINSTANCE /*hPrevInstance*/, LPSTR /*lpC
             renderDevice.GetDeviceContext()->VSSetShader(blinnPhongShader.GetVertexShader(), nullptr, 0);
             renderDevice.GetDeviceContext()->PSSetShader(blinnPhongShader.GetPixelShader(), nullptr, 0);
 
-            renderDevice.GetDeviceContext()->PSSetShaderResources(0, 1, &textureView);
-            renderDevice.GetDeviceContext()->PSSetSamplers(0, 1, &samplerState);
+            renderDevice.GetDeviceContext()->PSSetShaderResources(0, 1, testTexture.GetTextureViewAddr());
+            renderDevice.GetDeviceContext()->PSSetSamplers(0, 1, testTexture.GetSamplerStateAddr());
 
             renderDevice.GetDeviceContext()->VSSetConstantBuffers(0, 1, &blinnPhongVSConstantBuffer);
             renderDevice.GetDeviceContext()->PSSetConstantBuffers(0, 1, &blinnPhongPSConstantBuffer);
@@ -609,7 +540,7 @@ int WINAPI WinMain(HINSTANCE hInstance, HINSTANCE /*hPrevInstance*/, LPSTR /*lpC
                 constants->normalMatrix = cubeNormalMats[i];
                 renderDevice.GetDeviceContext()->Unmap(blinnPhongVSConstantBuffer, 0);
 
-                renderDevice.GetDeviceContext()->DrawIndexed(cubeNumIndices, 0, 0);
+                renderDevice.GetDeviceContext()->DrawIndexed(cubeModel.GetNumIndices(), 0, 0);
             }
         }
     

@@ -19,6 +19,13 @@
     <ClInclude Include="RendererShader.h">
       <Filter>Headers</Filter>
     </ClInclude>
+    <ClInclude Include="Model.h">
+      <Filter>Headers</Filter>
+    </ClInclude>
+    <ClInclude Include="Texture.h">
+      <Filter>Headers</Filter>
+    </ClInclude>
+    <ClInclude Include="globals.h" />
   </ItemGroup>
   <ItemGroup>
     <ClCompile Include="main.cpp" />
@@ -32,6 +39,12 @@
       <Filter>Implementation</Filter>
     </ClCompile>
     <ClCompile Include="RendererShader.cpp">
+      <Filter>Implementation</Filter>
+    </ClCompile>
+    <ClCompile Include="Model.cpp">
+      <Filter>Implementation</Filter>
+    </ClCompile>
+    <ClCompile Include="Texture.cpp">
       <Filter>Implementation</Filter>
     </ClCompile>
   </ItemGroup>

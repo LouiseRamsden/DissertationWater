@@ -46,6 +46,10 @@ public:
     {
         return m_pRenderTargetView;
     }
+    ID3D11RenderTargetView** GetRenderTargetAddr() 
+    {
+        return &m_pRenderTargetView;
+    }
     ID3D11DepthStencilView* GetDepthBuffer() 
     {
         return m_pDepthStencilView;

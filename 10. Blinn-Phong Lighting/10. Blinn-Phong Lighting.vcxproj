@@ -20,11 +20,14 @@
   </ItemGroup>
   <ItemGroup>
     <ClInclude Include="3DMaths.h" />
+    <ClInclude Include="globals.h" />
+    <ClInclude Include="Model.h" />
     <ClInclude Include="ObjLoading.h" />
     <ClInclude Include="RendererDevice.h" />
     <ClInclude Include="RendererTarget.h" />
     <ClInclude Include="RendererShader.h" />
     <ClInclude Include="stb_image.h" />
+    <ClInclude Include="Texture.h" />
   </ItemGroup>
   <ItemGroup>
     <None Include="BlinnPhong.hlsl">
@@ -51,10 +54,12 @@
   </ItemGroup>
   <ItemGroup>
     <ClCompile Include="main.cpp" />
+    <ClCompile Include="Model.cpp" />
     <ClCompile Include="ObjLoading.cpp" />
     <ClCompile Include="RendererDevice.cpp" />
     <ClCompile Include="RendererTarget.cpp" />
     <ClCompile Include="RendererShader.cpp" />
+    <ClCompile Include="Texture.cpp" />
   </ItemGroup>
   <ItemGroup>
     <Image Include="test.png" />
